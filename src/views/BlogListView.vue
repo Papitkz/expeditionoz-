@@ -58,7 +58,7 @@ const goToBlog = (slug: string) => {
             muted
             loop
             playsinline
-            preload="metadata"
+            preload="none"
           />
         </template>
         <!-- Fallback to image -->
@@ -101,7 +101,9 @@ const goToBlog = (slug: string) => {
                   class="blog-image"
                   muted
                   loop
-                  preload="metadata"
+                  preload="none"
+                  @mouseenter="($event.target as HTMLVideoElement).play()"
+                  @mouseleave="($event.target as HTMLVideoElement).pause()"
                 />
                 <img
                   v-else-if="item.coverImageUrl"

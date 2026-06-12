@@ -5,8 +5,6 @@ import { useRoute } from 'vue-router'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 import BookingForm from '@/components/BookingForm.vue'
 import NoImagePlaceholder from '@/components/NoImagePlaceholder.vue'
-import { getFirebaseDb, initFirebase } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { useEmail } from '@/composables/useEmail'
 import { useTripData } from '@/composables/useTripData'
 import { useComponentCMS } from '@/composables/useComponentCMS'
@@ -197,6 +195,10 @@ async function handleBookingSubmit() {
   bookingSubmitting.value = true
 
   try {
+    const [{ getFirebaseDb, initFirebase }, { collection, addDoc, serverTimestamp }] = await Promise.all([
+      import('@/lib/firebase'),
+      import('firebase/firestore'),
+    ])
     initFirebase()
     const db = getFirebaseDb()
 

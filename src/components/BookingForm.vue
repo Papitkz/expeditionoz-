@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { getFirebaseDb, initFirebase } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { useEmail } from '@/composables/useEmail'
 
 const props = defineProps<{
@@ -55,6 +53,10 @@ async function handleSubmit() {
   submitting.value = true
 
   try {
+    const [{ getFirebaseDb, initFirebase }, { collection, addDoc, serverTimestamp }] = await Promise.all([
+      import('@/lib/firebase'),
+      import('firebase/firestore'),
+    ])
     initFirebase()
     const db = getFirebaseDb()
 

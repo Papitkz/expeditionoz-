@@ -1,12 +1,23 @@
 import { ref, computed } from 'vue'
-import { getFirebaseDb } from '@/lib/firebase'
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-} from 'firebase/firestore'
+
+let _fb: any = null
+async function getFirebase() {
+  if (_fb) return _fb
+  const [{ getFirebaseDb, initFirebase }, firestore] = await Promise.all([
+    import('@/lib/firebase'),
+    import('firebase/firestore'),
+  ])
+  initFirebase()
+  _fb = {
+    db: getFirebaseDb(),
+    collection: firestore.collection,
+    query: firestore.query,
+    where: firestore.where,
+    orderBy: firestore.orderBy,
+    getDocs: firestore.getDocs,
+  }
+  return _fb
+}
 
 export interface TripData {
   id: string
@@ -91,7 +102,7 @@ export function useTripData(slug: string) {
   async function load() {
     loading.value = true
     try {
-      const db = getFirebaseDb()
+      const { db, collection, query, where, orderBy, getDocs } = await getFirebase()
 
       // Load trip by slug
       const tripQ = query(

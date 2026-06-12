@@ -57,17 +57,17 @@ const COMPONENT_REGISTRY: ComponentDef[] = [
   //     ]},
   //   ],
   // },
-  // {
-  //   component: 'ToursSection',
-  //   label: 'Home — Tour Cards',
-  //   file: 'src/components/home/ToursSection.vue',
-  //   sections: [
-  //     { section: 'tourCards', label: 'Tour Cards', slots: [
-  //       { slotIndex: 0, label: 'Ocean Safari Card', defaultMediaType: 'image' },
-  //       { slotIndex: 1, label: 'Dive Expedition Card', defaultMediaType: 'image' },
-  //     ]},
-  //   ],
-  // },
+  {
+    component: 'ToursSection',
+    label: 'Home — Tour Cards',
+    file: 'src/components/home/ToursSection.vue',
+    sections: [
+      { section: 'tourCards', label: 'Tour Cards', slots: [
+        { slotIndex: 0, label: 'Dive Expedition Card', defaultMediaType: 'image' },
+        { slotIndex: 1, label: 'Ocean Safari Card', defaultMediaType: 'image' },
+      ]},
+    ],
+  },
   {
     component: 'ExperienceSection',
     label: 'Home — Ningaloo Route Map',
@@ -78,16 +78,16 @@ const COMPONENT_REGISTRY: ComponentDef[] = [
       ]},
     ],
   },
-  // {
-  //   component: 'CtaSection',
-  //   label: 'Home — CTA Background',
-  //   file: 'src/components/home/CtaSection.vue',
-  //   sections: [
-  //     { section: 'ctaBackground', label: 'CTA Background', slots: [
-  //       { slotIndex: 0, label: 'Background Image', defaultMediaType: 'image' },
-  //     ]},
-  //   ],
-  // },
+  {
+    component: 'CtaSection',
+    label: 'Home — CTA Background',
+    file: 'src/components/home/CtaSection.vue',
+    sections: [
+      { section: 'ctaBackground', label: 'CTA Background', slots: [
+        { slotIndex: 0, label: 'Background Image', defaultMediaType: 'image' },
+      ]},
+    ],
+  },
   {
     component: 'AboutView',
     label: 'About Page',

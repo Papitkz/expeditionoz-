@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useComponentCMS } from '@/composables/useComponentCMS'
 import NoImagePlaceholder from '@/components/NoImagePlaceholder.vue'
@@ -7,57 +7,92 @@ import NoImagePlaceholder from '@/components/NoImagePlaceholder.vue'
 const router = useRouter()
 const cms = useComponentCMS('ToursSection')
 
+// Hardcoded tour data — cards always render regardless of CMS state.
+// Images are enriched from CMS if available, otherwise NoImagePlaceholder shows.
+const TOUR_DEFAULTS = [
+  {
+    key: 'dive-expedition',
+    title: 'DIVE EXPEDITION',
+    duration: '9 DAYS',
+    nights: '8 NIGHTS',
+    location: 'NINGALOO REEF',
+    features: [
+      'Included Whale Shark Swim (Seasonal)',
+      'Included Humpback Whale Swim (Seasonal)',
+      'Scuba Diving Included',
+      'Expedition RIB Operations',
+      'Onboard Chef Crafted Dining',
+    ],
+    link: '/expeditions/dive-expedition',
+  },
+  {
+    key: 'ocean-safari',
+    title: 'OCEAN SAFARI',
+    duration: '6 DAYS',
+    nights: '5 NIGHTS',
+    location: 'NINGALOO REEF',
+    features: [
+      'Whale Watching',
+      'Snorkelling & Marine Life',
+      'Sailing & Exploration',
+      'Yoga & Breathwork',
+      'Onboard Chef Crafted Dining',
+    ],
+    link: '/expeditions/ocean-safari',
+  },
+]
+
 const expeditions = computed(() => {
   const cards = cms.getSection('tourCards')
 
-  return cards.map((item, index) => ({
-    id: item.id || `tour-${index}`,
-    title: index === 0 ? 'DIVE EXPEDITION' : 'OCEAN SAFARI',
-    duration: index === 0 ? '9 DAYS' : '6 DAYS',
-    nights: index === 0 ? '8 NIGHTS' : '5 NIGHTS',
-    location: 'NINGALOO REEF',
-    image: item.imageUrl || '',
-    hasImage: !!item.imageUrl,
-    features:
-      index === 0
-        ? [
-            'Included Whale Shark Swim (Seasonal)',
-            'Included Humpback Whale Swim (Seasonal)',
-            'Scuba Diving Included',
-            'Expedition RIB Operations',
-            'Onboard Chef Crafted Dining'
-          ]
-        : [
-            'Whale Watching',
-            'Snorkelling & Marine Life',
-            'Sailing & Exploration',
-            'Yoga & Breathwork',
-            'Onboard Chef Crafted Dining'
-          ],
-    link: index === 0 ? '/expeditions/dive-expedition' : '/expeditions/ocean-safari'
-  }))
+  return TOUR_DEFAULTS.map((tour, index) => {
+    const cmsItem = cards[index]
+    return {
+      id: cmsItem?.id || `tour-${index}`,
+      ...tour,
+      image: cmsItem?.imageUrl || '',
+      hasImage: !!cmsItem?.imageUrl,
+    }
+  })
 })
 
 let observer: IntersectionObserver | null = null
 
-onMounted(async () => {
-  await cms.load()
-
-  observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('show')
-        }
-      })
-    },
-    {
-      threshold: 0.1
-    }
+function setupObserver() {
+  if (!observer) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show')
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+  }
+  document.querySelectorAll('.expedition-card.reveal:not(.show)').forEach((el) =>
+    observer?.observe(el)
   )
+}
 
-  document.querySelectorAll('.reveal').forEach((el) => observer?.observe(el))
+onMounted(async () => {
+  // Cards render immediately from TOUR_DEFAULTS — observe them right away
+  await nextTick()
+  setupObserver()
+
+  // Also load CMS images in background; watch() will re-observe if images arrive
+  cms.load()
 })
+
+// Re-observe after CMS images load (cards are already visible, images just update)
+watch(
+  () => cms.items.value,
+  async () => {
+    await nextTick()
+    setupObserver()
+  }
+)
 
 onUnmounted(() => {
   observer?.disconnect()
@@ -198,7 +233,7 @@ onUnmounted(() => {
   border-radius: 6px;
   border: 1px solid rgba(201, 168, 76, 0.4);
   background: #041a2b;
-  transition: transform 0.45s ease, border-color 0.45s ease;
+  transition: transform 0.45s ease, border-color 0.45s ease, opacity 0.6s ease;
   opacity: 0;
   transform: translateY(40px);
 }

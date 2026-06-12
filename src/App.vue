@@ -40,7 +40,7 @@ const handleToggleCursorEffects = (e: CustomEvent) => {
     if (ctx && canvasRef.value) {
       ctx.clearRect(0, 0, canvasRef.value.width, canvasRef.value.height)
     }
-  } else if (cursorEffectsEnabled.value && !animationFrameId) {
+  } else if (cursorEffectsEnabled.value && !animationFrameId && !isTouchDevice) {
     animateRipples()
   }
 }
@@ -118,6 +118,9 @@ const handleInitialLoad = async () => {
   }, 2000)
 }
 
+// No mousemove on touch screens — skip canvas entirely
+const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+
 onMounted(() => {
   const saved = localStorage.getItem('cursorEffects')
   if (saved !== null) {
@@ -128,7 +131,7 @@ onMounted(() => {
   window.addEventListener('toggleCursorEffects', handleToggleCursorEffects as EventListener)
   handleInitialLoad()
 
-  if (cursorEffectsEnabled.value) {
+  if (cursorEffectsEnabled.value && !isTouchDevice) {
     initCanvas()
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
   }
@@ -233,9 +236,9 @@ const animateRipples = () => {
       class="sr-only"
     >{{ routeAnnounce }}</div>
 
-    <!-- Ripple Canvas — only mounted when feature is on and not admin -->
+    <!-- Ripple Canvas — desktop with mouse only, not admin, not touch -->
     <canvas
-      v-if="cursorEffectsEnabled && !isAdminRoute"
+      v-if="cursorEffectsEnabled && !isAdminRoute && !isTouchDevice"
       ref="canvasRef"
       class="ripple-canvas"
       aria-hidden="true"

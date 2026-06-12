@@ -1,18 +1,29 @@
 import { ref } from 'vue'
-import { getFirebaseDb } from '@/lib/firebase'
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore'
+
+let _fb: any = null
+async function getFirebase() {
+  if (_fb) return _fb
+  const [{ getFirebaseDb, initFirebase }, firestore] = await Promise.all([
+    import('@/lib/firebase'),
+    import('firebase/firestore'),
+  ])
+  initFirebase()
+  _fb = {
+    db: getFirebaseDb(),
+    collection: firestore.collection,
+    doc: firestore.doc,
+    getDocs: firestore.getDocs,
+    setDoc: firestore.setDoc,
+    updateDoc: firestore.updateDoc,
+    deleteDoc: firestore.deleteDoc,
+    query: firestore.query,
+    where: firestore.where,
+    orderBy: firestore.orderBy,
+    serverTimestamp: firestore.serverTimestamp,
+    writeBatch: firestore.writeBatch,
+  }
+  return _fb
+}
 
 export interface ComponentContentItem {
   id: string
@@ -42,7 +53,7 @@ export function useComponentCMS(componentName: string) {
 
     loading.value = true
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
       const q = query(
         collection(db, 'cms_component_content'),
         where('component', '==', componentName),
@@ -117,7 +128,7 @@ export function useComponentCMS(componentName: string) {
 // Admin CRUD for component content
 export async function getAllComponentContent(): Promise<ComponentContentItem[]> {
   try {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
     const q = query(
       collection(db, 'cms_component_content'),
       orderBy('component'),
@@ -134,7 +145,7 @@ export async function getAllComponentContent(): Promise<ComponentContentItem[]> 
 
 export async function getComponentContent(component: string): Promise<ComponentContentItem[]> {
   try {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
     const q = query(
       collection(db, 'cms_component_content'),
       where('component', '==', component),
@@ -152,7 +163,7 @@ export async function getComponentContent(component: string): Promise<ComponentC
 export async function createComponentContent(
   data: Omit<ComponentContentItem, 'id' | 'updatedAt'>
 ): Promise<string> {
-  const db = getFirebaseDb()
+  const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
   const id = `cc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
   await setDoc(doc(db, 'cms_component_content', id), {
     ...data,
@@ -166,7 +177,7 @@ export async function updateComponentContent(
   data: Partial<Omit<ComponentContentItem, 'id'>>,
   component?: string
 ): Promise<void> {
-  const db = getFirebaseDb()
+  const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
   await updateDoc(doc(db, 'cms_component_content', id), {
     ...data,
     updatedAt: serverTimestamp(),
@@ -174,14 +185,14 @@ export async function updateComponentContent(
 }
 
 export async function deleteComponentContent(id: string): Promise<void> {
-  const db = getFirebaseDb()
+  const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
   await deleteDoc(doc(db, 'cms_component_content', id))
 }
 
 export async function batchUpdateSlotIndices(
   updates: { id: string; slotIndex: number; component: string }[]
 ): Promise<void> {
-  const db = getFirebaseDb()
+  const { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch } = await getFirebase()
   const batch = writeBatch(db)
   for (const u of updates) {
     batch.update(doc(db, 'cms_component_content', u.id), {

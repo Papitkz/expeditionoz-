@@ -84,11 +84,11 @@
   const prevVideoIndex = computed(() => currentVideoIndex.value === 0 ? videos.value.length - 1 : currentVideoIndex.value - 1)
   const hasMultipleVideos = computed(() => videos.value.length > 1)
 
-  // Preload video
+  // Preload next carousel video (metadata only to avoid buffering 2 full videos)
   const preloadVideo = (url: string) => {
     const video = document.createElement('video')
     video.src = url
-    video.preload = 'auto'
+    video.preload = 'metadata'
     video.muted = true
     video.load()
   }
@@ -262,7 +262,7 @@
           muted
           loop
           playsinline
-          preload="auto"
+          preload="metadata"
           class="w-full h-full object-cover video-hero"
           :class="{ 
             'video-fade-in': videoLoaded,

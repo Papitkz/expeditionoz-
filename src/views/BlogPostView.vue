@@ -81,6 +81,7 @@ const openLightbox = (index: number) => {
             muted
             loop
             playsinline
+            preload="none"
           />
           <img
             v-else-if="post.coverImageUrl"

@@ -1,18 +1,31 @@
 import { ref, onMounted } from 'vue'
-import { getFirebaseDb } from '@/lib/firebase'
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp,
-} from 'firebase/firestore'
+
+// Lazy Firebase loader — Firebase SDK only imported when first CMS read occurs
+let _fb: { db: any; collection: any; doc: any; getDocs: any; getDoc: any; setDoc: any; updateDoc: any; deleteDoc: any; query: any; where: any; orderBy: any; serverTimestamp: any } | null = null
+
+async function getFirebase() {
+  if (_fb) return _fb
+  const [{ getFirebaseDb, initFirebase }, firestore] = await Promise.all([
+    import('@/lib/firebase'),
+    import('firebase/firestore'),
+  ])
+  initFirebase()
+  _fb = {
+    db: getFirebaseDb(),
+    collection: firestore.collection,
+    doc: firestore.doc,
+    getDocs: firestore.getDocs,
+    getDoc: firestore.getDoc,
+    setDoc: firestore.setDoc,
+    updateDoc: firestore.updateDoc,
+    deleteDoc: firestore.deleteDoc,
+    query: firestore.query,
+    where: firestore.where,
+    orderBy: firestore.orderBy,
+    serverTimestamp: firestore.serverTimestamp,
+  }
+  return _fb
+}
 
 interface SectionData {
   id: string
@@ -74,7 +87,7 @@ export function useCMS() {
     loading.value = true
 
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
 
       // Load sections
       const sectionsSnap = await getDocs(collection(db, 'cms_sections'))
@@ -144,7 +157,7 @@ export function useCMS() {
   async function loadImageCache() {
     if (imagesLoaded) return
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const snap = await getDocs(query(collection(db, 'cms_images'), orderBy('sortOrder')))
       snap.docs.forEach((d) => {
         const data = d.data() as CMSImage
@@ -225,7 +238,7 @@ export function useCMS() {
 
   async function getTrips() {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const q = query(
         collection(db, 'cms_trips'),
         where('isPublished', '==', true),
@@ -241,7 +254,7 @@ export function useCMS() {
 
   async function getTripBySlug(slug: string) {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const q = query(
         collection(db, 'cms_trips'),
         where('slug', '==', slug),
@@ -258,7 +271,7 @@ export function useCMS() {
 
   async function getTripFeatures(tripId: string) {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const q = query(
         collection(db, 'cms_trip_features'),
         where('tripId', '==', tripId),
@@ -274,7 +287,7 @@ export function useCMS() {
 
   async function getTripItinerary(tripId: string) {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const q = query(
         collection(db, 'cms_trip_itinerary'),
         where('tripId', '==', tripId),
@@ -290,7 +303,7 @@ export function useCMS() {
 
   async function getBlogs() {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const q = query(
         collection(db, 'cms_blogs'),
         where('isPublished', '==', true),
@@ -321,7 +334,7 @@ export function useCMS() {
 
   async function getBlogBySlug(slug: string) {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const q = query(
         collection(db, 'cms_blogs'),
         where('slug', '==', slug),
@@ -338,7 +351,7 @@ export function useCMS() {
 
   async function getSetting(key: string): Promise<string> {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const docRef = doc(db, 'cms_settings', key)
       const snap = await getDoc(docRef)
       return snap.exists() ? snap.data().value || '' : ''
@@ -350,7 +363,7 @@ export function useCMS() {
 
   // Admin CRUD operations
   async function createSection(data: Partial<SectionData>) {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
     const id = data.sectionKey || `section_${Date.now()}`
     await setDoc(doc(db, 'cms_sections', id), {
       ...data,
@@ -362,7 +375,7 @@ export function useCMS() {
   }
 
   async function updateSection(id: string, data: Partial<SectionData>) {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
     await updateDoc(doc(db, 'cms_sections', id), {
       ...data,
       updatedAt: serverTimestamp(),
@@ -371,7 +384,7 @@ export function useCMS() {
   }
 
   async function deleteSection(id: string) {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
     await deleteDoc(doc(db, 'cms_sections', id))
     clearCache()
   }
@@ -379,7 +392,7 @@ export function useCMS() {
   // CMS Image CRUD
   async function getCMSImages(): Promise<CMSImage[]> {
     try {
-      const db = getFirebaseDb()
+      const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
       const snap = await getDocs(query(collection(db, 'cms_images'), orderBy('sortOrder')))
       return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CMSImage))
     } catch (e) {
@@ -389,7 +402,7 @@ export function useCMS() {
   }
 
   async function updateCMSImage(id: string, data: Partial<CMSImage>) {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
     await updateDoc(doc(db, 'cms_images', id), {
       ...data,
       updatedAt: serverTimestamp(),
@@ -402,7 +415,7 @@ export function useCMS() {
   }
 
   async function createCMSImage(data: Omit<CMSImage, 'id'>): Promise<string> {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
     const id = `img_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`
     await setDoc(doc(db, 'cms_images', id), {
       ...data,
@@ -413,7 +426,7 @@ export function useCMS() {
   }
 
   async function deleteCMSImage(id: string, key: string) {
-    const db = getFirebaseDb()
+    const { db, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } = await getFirebase()
     await deleteDoc(doc(db, 'cms_images', id))
     imageCache.delete(key)
   }

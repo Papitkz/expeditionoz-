@@ -6,8 +6,11 @@ let rafId: number | null = null
 
 export function useLenis() {
   onMounted(() => {
+    // Don't initialise on touch devices — they already have native momentum scroll
+    if (typeof window === 'undefined' || window.matchMedia('(pointer: coarse)').matches) return
+
     lenis = new Lenis({
-      duration: 1.2,
+      duration: 0.9,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     })

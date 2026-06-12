@@ -1,6 +1,13 @@
 import { ref, computed } from 'vue'
-import { getFirebaseDb } from '@/lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+
+async function getFirebase() {
+  const [{ getFirebaseDb, initFirebase }, { doc, getDoc }] = await Promise.all([
+    import('@/lib/firebase'),
+    import('firebase/firestore'),
+  ])
+  initFirebase()
+  return { db: getFirebaseDb(), doc, getDoc }
+}
 
 const KEYS = ['site_phone', 'site_email', 'site_address'] as const
 type SettingKey = (typeof KEYS)[number]
@@ -27,7 +34,7 @@ export function useSiteSettings() {
   async function load() {
     loading.value = true
     try {
-      const db = getFirebaseDb()
+      const { db, doc, getDoc } = await getFirebase()
       await Promise.all(
         KEYS.map(async (key) => {
           const snap = await getDoc(doc(db, 'cms_settings', key))

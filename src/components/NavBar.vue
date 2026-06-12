@@ -93,9 +93,13 @@ onUnmounted(() => {
 })
 
 const navLinks = [
-  { label: 'Expeditions', to: '/expeditions' },
+  // { label: 'Expeditions', to: '/' },
+  // { label: 'About', to: '/about' },
+  // { label: 'Blog', to: '/' },
+  // { label: 'FAQ', to: '/faq' }
+  { label: 'Expeditions', to: '/' },
   { label: 'About', to: '/about' },
-  { label: 'Blog', to: '/blog' },
+  { label: 'Blog', to: '/' },
   { label: 'FAQ', to: '/faq' }
 ]
 
@@ -186,7 +190,7 @@ onUnmounted(() => {
           <router-link to="/expeditions" class="top-right-btn hidden lg:inline-flex" style="background-color:  #dbb86a;color: black;">
             Choose Your Adventure
           </router-link>
-          <router-link to="/book" class="top-right-btn hidden lg:inline-flex">
+          <router-link to="/" class="top-right-btn hidden lg:inline-flex">
             Booking Enquiry
           </router-link>
 
@@ -361,23 +365,6 @@ onUnmounted(() => {
 
   <!-- Bottom Controls Bar -->
   <div class="bottom-controls">
-    <button
-      class="control-btn cursor-toggle"
-      @click="toggleCursorEffects"
-      :class="{ active: cursorEffectsEnabled }"
-      :title="cursorEffectsEnabled ? 'Disable cursor effects' : 'Enable cursor effects'"
-    >
-      <svg v-if="cursorEffectsEnabled" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34L2.1 2.1"></path>
-      </svg>
-      <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34L2.1 2.1"></path>
-        <line x1="1" y1="1" x2="23" y2="23"></line>
-      </svg>
-      <span class="control-label">Cursor FX</span>
-    </button>
 
     <div class="divider"></div>
 

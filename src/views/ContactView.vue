@@ -6,8 +6,6 @@ import { useScrollReveal } from '@/composables/useScrollReveal'
 import PageHero from '@/components/PageHero.vue'
 import NoImagePlaceholder from '@/components/NoImagePlaceholder.vue'
 import { useComponentCMS } from '@/composables/useComponentCMS'
-import { getFirebaseDb, initFirebase } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { useEmail } from '@/composables/useEmail'
 import { useTripData } from '@/composables/useTripData'
 import { useSiteSettings } from '@/composables/useSiteSettings'
@@ -145,6 +143,10 @@ async function handleSubmit() {
   submitting.value = true
 
   try {
+    const [{ getFirebaseDb, initFirebase }, { collection, addDoc, serverTimestamp }] = await Promise.all([
+      import('@/lib/firebase'),
+      import('firebase/firestore'),
+    ])
     initFirebase()
     const db = getFirebaseDb()
     const tripName = selectedTripDetails.value?.name || form.value.expedition
