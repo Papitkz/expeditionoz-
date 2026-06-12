@@ -106,8 +106,8 @@ const navLinks = [
 const reefExpanded = ref(false)
 
 const reefSubItems = [
-  { label: 'Dive Expedition', to: '/expeditions/dive-expedition', tag: '9 Days' },
-  { label: 'Ocean Safari', to: '/expeditions/ocean-safari', tag: '6 Days' }
+  { label: 'Dive Expedition', to: '/', tag: '9 Days' },
+  { label: 'Ocean Safari', to: '/', tag: '6 Days' }
 ]
 
 function toggleReefMenu() {
@@ -187,9 +187,11 @@ onUnmounted(() => {
         <!-- Right: Buttons -->
         <div class="flex items-center gap-2 sm:gap-3 z-10 relative">
           <!-- Desktop: show both buttons -->
-          <router-link to="/expeditions" class="top-right-btn hidden lg:inline-flex" style="background-color:  #dbb86a;color: black;">
+           <!-- to="/expeditions" -->
+          <router-link to="/"  class="top-right-btn hidden lg:inline-flex" style="background-color:  #dbb86a;color: black;">
             Choose Your Adventure
           </router-link>
+         <!-- to="/book" -->
           <router-link to="/" class="top-right-btn hidden lg:inline-flex">
             Booking Enquiry
           </router-link>
@@ -328,7 +330,8 @@ onUnmounted(() => {
 
       <!-- Bottom Actions -->
       <div class="menu-bottom-actions">
-        <button class="btn-primary-mobile" @click="navigate('/book')">
+        <!-- /book -->
+        <button class="btn-primary-mobile" @click="navigate('/')">
           Book Now
         </button>
 

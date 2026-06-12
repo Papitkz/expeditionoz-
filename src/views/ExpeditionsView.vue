@@ -273,7 +273,7 @@ onUnmounted(() => {
           </p>
           <button
             class="btn-gold btn-large"
-            @click="router.push('/book')"
+            @click="router.push('/')"
           >
             CHECK AVAILABILITY & BOOK
           </button>

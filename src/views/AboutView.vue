@@ -190,7 +190,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <CtaSection />
+    <!-- <CtaSection /> -->
   </div>
 </template>
 

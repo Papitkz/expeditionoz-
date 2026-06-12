@@ -171,16 +171,17 @@ onUnmounted(() => {
             </ul>
 
             <div class="card-actions">
+                <!-- @click="router.push(item.link)" -->
+
               <button
                 class="btn-gold"
-                @click="router.push(item.link)"
               >
                 VIEW EXPEDITION
               </button>
+                <!-- @click="router.push(`${item.link}/dates`)" -->
 
               <button
                 class="btn-link"
-                @click="router.push(`${item.link}/dates`)"
               >
                 SEE DATES
 
