@@ -9,7 +9,8 @@
         </p>
       </div>
 
-      <div class="experience-grid">
+      <!-- Desktop: Grid Layout -->
+      <div class="experience-grid desktop-only">
         <div
           v-for="item in experiences"
           :key="item.label"
@@ -47,6 +48,59 @@
             <h3 class="experience-title">{{ item.label }}</h3>
           </div>
         </div>
+      </div>
+
+      <!-- Mobile: Carousel / Slider -->
+      <div class="mobile-carousel mobile-only">
+        <div class="carousel-track" ref="trackRef">
+          <div
+            v-for="(item, index) in experiences"
+            :key="item.label"
+            class="carousel-slide"
+            :class="{ active: currentSlide === index }"
+          >
+            <div class="carousel-card">
+              <div class="carousel-image-wrap">
+                <img
+                  :src="item.image"
+                  :alt="item.label"
+                  class="carousel-image"
+                />
+                <div class="carousel-overlay"></div>
+              </div>
+              <div class="carousel-body">
+                <span class="carousel-tag">Ocean Experience</span>
+                <h3 class="carousel-title">{{ item.label }}</h3>
+                <div class="carousel-divider"></div>
+                <p class="carousel-text">{{ item.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide Indicators -->
+        <div class="carousel-dots">
+          <button
+            v-for="(_, index) in experiences"
+            :key="index"
+            class="carousel-dot"
+            :class="{ active: currentSlide === index }"
+            @click="goToSlide(index)"
+            :aria-label="`Go to slide ${index + 1}`"
+          />
+        </div>
+
+        <!-- Navigation Arrows -->
+        <button class="carousel-arrow carousel-prev" @click="prevSlide" aria-label="Previous slide">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <button class="carousel-arrow carousel-next" @click="nextSlide" aria-label="Next slide">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
       </div>
 
       <div class="nature-box">
@@ -128,6 +182,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+
 const experiences = [
   {
     label: 'MANTA RAY ENCOUNTERS',
@@ -198,6 +254,85 @@ const features = [
     description: 'Expert crew with unmatched local insight.'
   }
 ]
+
+// ========================
+// Carousel Logic
+// ========================
+const currentSlide = ref(0)
+const trackRef = ref<HTMLElement | null>(null)
+let autoPlayInterval: ReturnType<typeof setInterval> | null = null
+let touchStartX = 0
+let touchEndX = 0
+
+const goToSlide = (index: number) => {
+  currentSlide.value = index
+  updateTrackPosition()
+}
+
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % experiences.length
+  updateTrackPosition()
+}
+
+const prevSlide = () => {
+  currentSlide.value = (currentSlide.value - 1 + experiences.length) % experiences.length
+  updateTrackPosition()
+}
+
+const updateTrackPosition = () => {
+  if (trackRef.value) {
+    trackRef.value.style.transform = `translateX(-${currentSlide.value * 100}%)`
+  }
+}
+
+// Touch swipe support
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX = e.changedTouches[0].screenX
+}
+
+const handleTouchEnd = (e: TouchEvent) => {
+  touchEndX = e.changedTouches[0].screenX
+  const diff = touchStartX - touchEndX
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) {
+      nextSlide()
+    } else {
+      prevSlide()
+    }
+  }
+}
+
+// Auto-play
+const startAutoPlay = () => {
+  autoPlayInterval = setInterval(() => {
+    nextSlide()
+  }, 5000)
+}
+
+const stopAutoPlay = () => {
+  if (autoPlayInterval) {
+    clearInterval(autoPlayInterval)
+    autoPlayInterval = null
+  }
+}
+
+onMounted(() => {
+  startAutoPlay()
+  const carousel = document.querySelector('.mobile-carousel')
+  if (carousel) {
+    carousel.addEventListener('touchstart', handleTouchStart, { passive: true })
+    carousel.addEventListener('touchend', handleTouchEnd, { passive: true })
+  }
+})
+
+onUnmounted(() => {
+  stopAutoPlay()
+  const carousel = document.querySelector('.mobile-carousel')
+  if (carousel) {
+    carousel.removeEventListener('touchstart', handleTouchStart)
+    carousel.removeEventListener('touchend', handleTouchEnd)
+  }
+})
 </script>
 
 <style scoped>
@@ -219,7 +354,7 @@ const features = [
   margin-right: calc(50% - 50vw);
   background: radial-gradient(circle at top, #06314f 0%, #041a2b 55%);
   padding: 60px 20px 40px 20px;
-  overflow: visible; 
+  overflow: visible;
 }
 
 .ocean-container {
@@ -249,11 +384,17 @@ const features = [
   font-size: 0.95rem;
 }
 
-.experience-grid {
+/* ==========================================================================
+   DESKTOP GRID (Default - visible on desktop)
+   ========================================================================== */
+.desktop-only {
   display: grid;
+}
+
+.experience-grid {
   grid-template-columns: repeat(8, 1fr);
   gap: 12px;
-  margin-top: 140px; /* Accounts for floating elements cleanly */
+  margin-top: 140px;
   margin-bottom: 40px;
 }
 
@@ -300,7 +441,7 @@ const features = [
 }
 
 /* ==========================================================================
-   Floating Tooltip Configurations
+   Floating Tooltip Configurations (Desktop Only)
    ========================================================================== */
 .v-hover-floating-card {
   position: absolute;
@@ -316,7 +457,7 @@ const features = [
   transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.3s;
   pointer-events: none;
   border-radius: 2px;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .v-floating-image-wrap {
@@ -419,9 +560,6 @@ const features = [
   font-weight: 300;
 }
 
-/* ==========================================================================
-   Base Structure Components Continuation
-   ========================================================================== */
 .experience-label {
   min-height: 62px;
   display: flex;
@@ -440,6 +578,172 @@ const features = [
   font-weight: 700;
 }
 
+/* ==========================================================================
+   MOBILE CAROUSEL (Hidden on desktop by default)
+   ========================================================================== */
+.mobile-only {
+  display: none;
+}
+
+.mobile-carousel {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  margin: 20px 0 40px 0;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  width: 100%;
+}
+
+.carousel-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  padding: 0 8px;
+  opacity: 0.4;
+  transform: scale(0.92);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.carousel-card {
+  background: #041a2b;
+  border: 1px solid rgba(198,154,69,0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.carousel-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carousel-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(4,26,43,0.95) 0%,
+    rgba(4,26,43,0.3) 50%,
+    transparent 100%
+  );
+}
+
+.carousel-body {
+  padding: 18px 20px 22px;
+  text-align: center;
+}
+
+.carousel-tag {
+  color: #c69a45;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.carousel-title {
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  margin: 0 auto 8px auto;
+}
+
+.carousel-divider {
+  width: 32px;
+  height: 1px;
+  background: rgba(198, 154, 69, 0.5);
+  margin: 0 auto 10px auto;
+}
+
+.carousel-text {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 300;
+}
+
+/* Carousel Dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(198, 154, 69, 0.4);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.carousel-dot.active {
+  background: #c69a45;
+  border-color: #c69a45;
+  transform: scale(1.2);
+}
+
+/* Carousel Arrows */
+.carousel-arrow {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(4, 26, 43, 0.7);
+  border: 1px solid rgba(198, 154, 69, 0.4);
+  color: #c69a45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.carousel-arrow:hover {
+  background: rgba(198, 154, 69, 0.2);
+  border-color: #c69a45;
+}
+
+.carousel-prev {
+  left: 4px;
+}
+
+.carousel-next {
+  right: 4px;
+}
+
+/* ==========================================================================
+   Nature Box
+   ========================================================================== */
 .nature-box {
   border: 1px solid rgba(198,154,69,0.35);
   display: grid;
@@ -542,12 +846,12 @@ const features = [
 }
 
 /* ==========================================================================
-   Responsive Framework Modifications
+   Responsive Framework
    ========================================================================== */
 @media (max-width: 1400px) {
   .experience-grid {
     grid-template-columns: repeat(4, 1fr);
-    row-gap: 32px; /* Adds space so stacked rows don't clip cards below them */
+    row-gap: 32px;
     margin-top: 140px;
   }
 }
@@ -600,18 +904,22 @@ const features = [
   }
 }
 
-@media (max-width: 480px) {
-  /* Hide hover tools entirely to clean up mobile duplicate image flow */
-  .v-hover-floating-card {
+/* ==========================================================================
+   MOBILE BREAKPOINT: Switch to Carousel
+   ========================================================================== */
+@media (max-width: 640px) {
+  .desktop-only {
     display: none !important;
   }
 
-  .experience-grid {
-    grid-template-columns: 1fr; 
-    margin-top: 20px;
-    row-gap: 16px;
+  .mobile-only {
+    display: block;
   }
-  
+
+  .ocean-wrapper {
+    padding: 40px 16px 30px 16px;
+  }
+
   .main-title {
     font-size: 1.2rem;
   }
@@ -620,12 +928,27 @@ const features = [
     font-size: 0.85rem;
   }
 
-  .experience-title {
-    font-size: 0.65rem;
-  }
-
   .nature-title {
     font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-slide {
+    padding: 0 4px;
+  }
+
+  .carousel-arrow {
+    width: 32px;
+    height: 32px;
+  }
+
+  .carousel-prev {
+    left: 2px;
+  }
+
+  .carousel-next {
+    right: 2px;
   }
 }
 </style>
