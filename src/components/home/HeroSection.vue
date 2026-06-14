@@ -19,19 +19,21 @@
   const currentVideoIndex = ref(0)
   const isTransitioning = ref(false)
   const videoLoaded = ref(false)
-  const isPlaying = ref(false) // START PAUSED — no autoplay
-  const showControls = ref(true) // Always show controls initially
+  const isPlaying = ref(false)
+  const showControls = ref(true)
   const isHovering = ref(false)
   const isMobile = ref(false)
   const touchStartX = ref(0)
   const touchEndX = ref(0)
   const videoError = ref(false)
   const isBuffering = ref(false)
-  const videoRef = ref<HTMLVideoElement | null>(null)
-  const showCenterPlay = ref(true) // Always show center play button initially
+  const videoRef = ref<<HTMLVideoElement | null>(null)
+  const showCenterPlay = ref(false) // Hidden by default on mobile
+  const showMobilePlay = ref(false) // Controls mobile play button visibility
 
   let resizeObserver: ResizeObserver | null = null
   let transitionTimeout: number | null = null
+  let mobilePlayTimeout: number | null = null
 
   onMounted(async () => {
     await cms.load()
@@ -46,7 +48,6 @@
     if (videoRef.value && videos.value[0]?.hasVideo) {
       videoRef.value.src = videos.value[0].videoUrl
       videoRef.value.load()
-      // Video stays paused until user clicks play
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -55,12 +56,17 @@
   onUnmounted(() => {
     if (transitionTimeout) clearTimeout(transitionTimeout)
     if (resizeObserver) resizeObserver.disconnect()
+    if (mobilePlayTimeout) clearTimeout(mobilePlayTimeout)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
   })
 
   // Mobile detection
   const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
+    // On desktop, always show play button. On mobile, hide until tapped.
+    if (!isMobile.value) {
+      showCenterPlay.value = true
+    }
   }
 
   // Computed video properties
@@ -84,15 +90,16 @@
 
     try {
       isBuffering.value = true
-      videoRef.value.muted = false // Unmute on user interaction
+      videoRef.value.muted = false
       await videoRef.value.play()
       isPlaying.value = true
       videoError.value = false
       showCenterPlay.value = false
+      showMobilePlay.value = false
     } catch (err) {
       console.warn('Playback failed:', err)
       isPlaying.value = false
-      showCenterPlay.value = true
+      if (!isMobile.value) showCenterPlay.value = true
     } finally {
       isBuffering.value = false
     }
@@ -103,7 +110,7 @@
     if (!videoRef.value) return
     videoRef.value.pause()
     isPlaying.value = false
-    showCenterPlay.value = true
+    if (!isMobile.value) showCenterPlay.value = true
   }
 
   // Toggle play/pause
@@ -115,6 +122,20 @@
     }
   }
 
+  // Handle hero section tap on mobile
+  const handleHeroTap = () => {
+    if (!isMobile.value) return
+    // Show play button on tap
+    showMobilePlay.value = true
+    // Auto-hide after 3 seconds if not clicked
+    if (mobilePlayTimeout) clearTimeout(mobilePlayTimeout)
+    mobilePlayTimeout = window.setTimeout(() => {
+      if (!isPlaying.value) {
+        showMobilePlay.value = false
+      }
+    }, 3000)
+  }
+
   // Smooth video transition
   const switchVideo = (newIndex: number) => {
     if (isTransitioning.value || newIndex === currentVideoIndex.value || !videoRef.value || !videos.value[newIndex]?.hasVideo) return
@@ -122,17 +143,12 @@
     isTransitioning.value = true
     isBuffering.value = true
 
-    // Pause current video first
     videoRef.value.pause()
 
-    // Fade out current
     videoRef.value.style.opacity = '0.3'
 
     transitionTimeout = window.setTimeout(() => {
-      // Update index
       currentVideoIndex.value = newIndex
-
-      // Set new source
       videoRef.value!.src = videos.value[newIndex].videoUrl
       videoRef.value!.load()
 
@@ -142,11 +158,11 @@
         isTransitioning.value = false
         isBuffering.value = false
 
-        // Reset to paused state — user must click play again
+        // Reset to paused state
         isPlaying.value = false
-        showCenterPlay.value = true
+        if (!isMobile.value) showCenterPlay.value = true
+        showMobilePlay.value = false
 
-        // Preload next video
         if (videos.value[nextVideoIndex.value]?.hasVideo) {
           preloadVideo(videos.value[nextVideoIndex.value].videoUrl)
         }
@@ -168,7 +184,7 @@
 
   const handleVideoEnded = () => {
     isPlaying.value = false
-    showCenterPlay.value = true
+    if (!isMobile.value) showCenterPlay.value = true
   }
 
   // Touch handlers for mobile swipe
@@ -225,13 +241,14 @@
   }
 </script>
 
-<template>
+<<template>
   <section 
     class="relative h-screen w-full overflow-hidden hero-section"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
     @touchstart="onTouchStart"
     @touchend="onTouchEnd"
+    @click="handleHeroTap"
   >
     <!-- Video Background with Carousel -->
     <div class="absolute inset-0 z-0">
@@ -274,12 +291,11 @@
       <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
     </div>
 
-    <!-- CENTER PLAY BUTTON -->
+    <!-- DESKTOP CENTER PLAY BUTTON (always visible) -->
     <button
-      v-if="videos[0]?.hasVideo && !isBuffering"
-      @click="togglePlayPause"
-      class="center-play-button"
-      :class="{ 'is-visible': showCenterPlay || !isPlaying }"
+      v-if="videos[0]?.hasVideo && !isBuffering && !isMobile"
+      @click.stop="togglePlayPause"
+      class="center-play-button desktop-play"
       :aria-label="isPlaying ? 'Pause video' : 'Play video'"
     >
       <div class="play-circle">
@@ -293,10 +309,29 @@
       <span v-if="!isPlaying" class="play-label">Play Video</span>
     </button>
 
+    <!-- MOBILE CENTER PLAY BUTTON (hidden until tapped) -->
+    <button
+      v-if="videos[0]?.hasVideo && !isBuffering && isMobile && showMobilePlay"
+      @click.stop="togglePlayPause"
+      class="center-play-button mobile-play"
+      :class="{ 'is-visible': showMobilePlay }"
+      :aria-label="isPlaying ? 'Pause video' : 'Play video'"
+    >
+      <div class="play-circle">
+        <svg v-if="!isPlaying" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="play-icon">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="pause-icon">
+          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+        </svg>
+      </div>
+      <span v-if="!isPlaying" class="play-label">Tap to Play</span>
+    </button>
+
     <!-- Carousel Navigation Arrows (when multiple videos) -->
     <template v-if="hasMultipleVideos && videos[0]?.hasVideo">
       <button
-        @click="prevVideo"
+        @click.stop="prevVideo"
         class="carousel-nav carousel-prev"
         aria-label="Previous video"
       >
@@ -305,7 +340,7 @@
         </svg>
       </button>
       <button
-        @click="nextVideo"
+        @click.stop="nextVideo"
         class="carousel-nav carousel-next"
         aria-label="Next video"
       >
@@ -321,7 +356,7 @@
           :key="index"
           class="video-dot"
           :class="{ active: currentVideoIndex === index }"
-          @click="goToVideo(index)"
+          @click.stop="goToVideo(index)"
           :aria-label="`Go to video ${index + 1}`"
         />
       </div>
@@ -344,7 +379,7 @@
         <router-link to="/expeditions" class="btn-hero-choose px-8 py-4 text-sm md:text-base tracking-widest font-medium uppercase text-center">
           Choose Your Adventure
         </router-link>
-        <button @click="router.push('/contact')" class="btn-hero-book px-8 py-4 text-sm md:text-base tracking-widest font-medium uppercase text-center">
+        <button @click.stop="router.push('/contact')" class="btn-hero-book px-8 py-4 text-sm md:text-base tracking-widest font-medium uppercase text-center">
           Booking Enquiry
         </button>
       </div>
@@ -389,7 +424,7 @@
   100% { transform: scale(1.08); }
 }
 
-/* CENTER PLAY BUTTON */
+/* CENTER PLAY BUTTON - SHARED */
 .center-play-button {
   position: absolute;
   top: 50%;
@@ -404,9 +439,26 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  transition: opacity 0.4s ease, transform 0.3s ease;
+}
+
+/* DESKTOP PLAY BUTTON */
+.desktop-play {
   opacity: 1;
   pointer-events: auto;
-  transition: opacity 0.4s ease;
+}
+
+/* MOBILE PLAY BUTTON */
+.mobile-play {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.mobile-play.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .play-circle {
@@ -573,17 +625,17 @@
 
 @media (max-width: 767px) {
   .play-circle {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
   }
   .play-icon {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     margin-left: 2px;
   }
   .pause-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
   .play-label {
     font-size: 0.7rem;
