@@ -93,21 +93,17 @@ onUnmounted(() => {
 })
 
 const navLinks = [
-  // { label: 'Expeditions', to: '/' },
-  // { label: 'About', to: '/about' },
-  // { label: 'Blog', to: '/' },
-  // { label: 'FAQ', to: '/faq' }
-  { label: 'Expeditions', to: '/' },
+  { label: 'Expeditions', to: '/expeditions' },
   { label: 'About', to: '/about' },
-  { label: 'Blog', to: '/' },
+  { label: 'Blog', to: '/blog' },
   { label: 'FAQ', to: '/faq' }
 ]
 
 const reefExpanded = ref(false)
 
 const reefSubItems = [
-  { label: 'Dive Expedition', to: '/', tag: '9 Days' },
-  { label: 'Ocean Safari', to: '/', tag: '6 Days' }
+  { label: 'Dive Expedition', to: '/expeditions/dive-expedition', tag: '9 Days' },
+  { label: 'Ocean Safari', to: '/expeditions/ocean-safari', tag: '6 Days' }
 ]
 
 function toggleReefMenu() {
@@ -187,12 +183,10 @@ onUnmounted(() => {
         <!-- Right: Buttons -->
         <div class="flex items-center gap-2 sm:gap-3 z-10 relative">
           <!-- Desktop: show both buttons -->
-           <!-- to="/expeditions" -->
-          <router-link to="/"  class="top-right-btn hidden lg:inline-flex" style="background-color:  #dbb86a;color: black;">
+          <router-link to="/expeditions" class="top-right-btn hidden lg:inline-flex" style="background-color:  #dbb86a;color: black;">
             Choose Your Adventure
           </router-link>
-         <!-- to="/book" -->
-          <router-link to="/" class="top-right-btn hidden lg:inline-flex">
+          <router-link to="/book" class="top-right-btn hidden lg:inline-flex">
             Booking Enquiry
           </router-link>
 
@@ -330,8 +324,7 @@ onUnmounted(() => {
 
       <!-- Bottom Actions -->
       <div class="menu-bottom-actions">
-        <!-- /book -->
-        <button class="btn-primary-mobile" @click="navigate('/')">
+        <button class="btn-primary-mobile" @click="navigate('/book')">
           Book Now
         </button>
 
@@ -368,8 +361,6 @@ onUnmounted(() => {
 
   <!-- Bottom Controls Bar -->
   <div class="bottom-controls">
-
-    <div class="divider"></div>
 
     <div class="timezone-wrapper">
       <div class="clock-display" @click="showTimezoneDropdown = !showTimezoneDropdown">

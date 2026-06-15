@@ -30,15 +30,24 @@ export function clearRecaptchaVerifier() {
   }
 }
 
+// const FIREBASE_CONFIG = {
+//   apiKey: "AIzaSyC7jSYOGy5_ZbeZCVkPC1rCZ_Z8abZuhy0",
+//   authDomain: "expeditionoz.firebaseapp.com",
+//   projectId: "expeditionoz",
+//   storageBucket: "expeditionoz.firebasestorage.app",
+//   messagingSenderId: "161777857257",
+//   appId: "1:161777857257:web:526470afc6e3cf5b4cb678",
+//   measurementId: "G-6SRTR4NTKD"
+// }
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC7jSYOGy5_ZbeZCVkPC1rCZ_Z8abZuhy0",
-  authDomain: "expeditionoz.firebaseapp.com",
-  projectId: "expeditionoz",
-  storageBucket: "expeditionoz.firebasestorage.app",
-  messagingSenderId: "161777857257",
-  appId: "1:161777857257:web:526470afc6e3cf5b4cb678",
-  measurementId: "G-6SRTR4NTKD"
-}
+  apiKey: "AIzaSyDG-i_PdGmDVQXWHQrhG5vUYAeofLZkf04",
+  authDomain: "expeditionoz-95b7a.firebaseapp.com",
+  projectId: "expeditionoz-95b7a",
+  storageBucket: "expeditionoz-95b7a.firebasestorage.app",
+  messagingSenderId: "799540419565",
+  appId: "1:799540419565:web:67ae3bf2342e37c63d65e4",
+  measurementId: "G-91CB7DKDGT"
+};
 
 let app: FirebaseApp | null = null
 let auth: Auth | null = null

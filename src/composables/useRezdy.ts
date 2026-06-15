@@ -47,7 +47,7 @@ export function useRezdy() {
     
     // Use 767117 for ocean-safari, 767118 for dive-expedition
     const widgetId = slug === 'ocean-safari' ? '767117' : '767118'
-    return `https://${companyCode.value}1.rezdy.com/${widgetId}/${productId}`
+    return `https://${companyCode.value}.rezdy.com/${widgetId}/${productId}`
   }
 
   function hasRezdyIntegration(): boolean {

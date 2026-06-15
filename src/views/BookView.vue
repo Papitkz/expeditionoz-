@@ -12,7 +12,7 @@ import { useRezdy } from '@/composables/useRezdy'
 
 useScrollReveal()
 
-const {  getBookingWidgetUrl, loadRezdyConfig } = useRezdy()
+const { getBookingWidgetUrl, loadRezdyConfig } = useRezdy()
 
 const route = useRoute()
 const { sendBookingEmails } = useEmail()
@@ -22,6 +22,9 @@ const oceanSafariTrip = useTripData('ocean-safari')
 const diveExpeditionTrip = useTripData('dive-expedition')
 const oceanSafariCms = useComponentCMS('OceanSafariView')
 const diveExpeditionCms = useComponentCMS('DiveExpeditionView')
+
+// Shared CMS source — same as ExpeditionsView for hoverImages (cards[0] = ocean-safari, cards[1] = dive-expedition)
+const expeditionsCms = useComponentCMS('ExpeditionsView')
 
 // Fallback static highlights (shown when CMS features haven't loaded yet)
 const FALLBACK_HIGHLIGHTS: Record<string, string[]> = {
@@ -57,14 +60,18 @@ function buildTripCard(
     ? `${tripData.durationDays.value} Days / ${Math.max(1, nights)} Nights`
     : slug === 'ocean-safari' ? '6 Days / 5 Nights' : '9 Days / 8 Nights'
 
-  // Hero image: prefer CMS component hero poster (slot 1), then trip heroImageUrl
-  const heroPoster = cms.getSlot('hero', 1)
-  const heroImage =
-    heroPoster?.imageUrl ||
-    t?.heroImageUrl ||
-    (slug === 'ocean-safari'
-      ? 'https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?q=80&w=2400&auto=format&fit=crop'
-      : 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2400&auto=format&fit=crop')
+  // Pull from same CMS source as ExpeditionsView — hoverImages cards[0] = ocean-safari, cards[1] = dive-expedition
+  const cards = expeditionsCms.getSection('hoverImages')
+  const heroSlotIndex = slug === 'ocean-safari' ? 0 : 1
+  const cmsImage = cards[heroSlotIndex]?.imageUrl || null
+  const hasImage = !!cards[heroSlotIndex]?.imageUrl
+
+  const heroImage = hasImage
+    ? cmsImage
+    : t?.heroImageUrl ||
+      (slug === 'ocean-safari'
+        ? 'https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?q=80&w=2400&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2400&auto=format&fit=crop')
 
   const highlights =
     tripData.features.value.length > 0
@@ -85,6 +92,7 @@ function buildTripCard(
     priceLabel: tripData.priceLabel.value || (slug === 'ocean-safari' ? 'From $2,495 AUD' : 'From $4,495 AUD'),
     priceCurrency: 'AUD',
     heroImage,
+    hasImage,
     description:
       t?.shortDescription ||
       t?.description ||
@@ -148,11 +156,12 @@ onMounted(async () => {
     diveExpeditionTrip.load(),
     oceanSafariCms.load(),
     diveExpeditionCms.load(),
+    expeditionsCms.load(),
     loadRezdyConfig(),
   ])
 })
 
-// Booking form state (same as ContactView pattern)
+// Booking form state
 const bookingForm = ref({
   name: '',
   email: '',
@@ -186,7 +195,7 @@ function resetBooking() {
 
 async function handleBookingSubmit() {
   bookingError.value = ''
-  
+
   if (!bookingForm.value.name.trim() || !bookingForm.value.email.trim() || !activeTrip.value) {
     bookingError.value = 'Please fill in all required fields'
     return
@@ -250,7 +259,7 @@ useSEO({
     <!-- Hero Section -->
     <section class="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden">
       <div class="absolute inset-0 z-0">
-        <template v-if="activeTrip?.heroImage">
+        <template v-if="activeTrip?.hasImage">
           <img
             :src="activeTrip.heroImage"
             :alt="activeTrip.name"
@@ -419,7 +428,7 @@ useSEO({
             <div v-else class="contact-form-wrap" :key="bookingKey">
               <form @submit.prevent="handleBookingSubmit" class="space-y-6">
                 <div v-if="bookingError" class="error-message">{{ bookingError }}</div>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div class="form-group">
                     <label class="form-label">Full Name *</label>
@@ -447,21 +456,21 @@ useSEO({
                   <label class="form-label">Preferred Dates *</label>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <input 
-                        v-model="bookingForm.dateFrom" 
-                        type="date" 
-                        required 
-                        class="form-input" 
+                      <input
+                        v-model="bookingForm.dateFrom"
+                        type="date"
+                        required
+                        class="form-input"
                         :min="new Date().toISOString().split('T')[0]"
                       />
                       <span class="text-xs opacity-50 mt-1 block" style="color: var(--color-sand-200);">From</span>
                     </div>
                     <div>
-                      <input 
-                        v-model="bookingForm.dateTo" 
-                        type="date" 
-                        required 
-                        class="form-input" 
+                      <input
+                        v-model="bookingForm.dateTo"
+                        type="date"
+                        required
+                        class="form-input"
                         :min="bookingForm.dateFrom || new Date().toISOString().split('T')[0]"
                       />
                       <span class="text-xs opacity-50 mt-1 block" style="color: var(--color-sand-200);">To</span>

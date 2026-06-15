@@ -68,6 +68,7 @@ const COMPONENT_REGISTRY: ComponentDef[] = [
       ]},
     ],
   },
+
   {
     component: 'ExperienceSection',
     label: 'Home — Ningaloo Route Map',
@@ -78,6 +79,27 @@ const COMPONENT_REGISTRY: ComponentDef[] = [
       ]},
     ],
   },
+    {
+    component: 'InclusionsSection',
+    label: 'Home — Inclusions (Curated by the Ocean)',
+    file: 'src/components/home/InclusionsSection.vue',
+    sections: [
+      { section: 'experienceCards', label: 'Experience Cards', slots: [
+        { slotIndex: 0, label: 'Manta Ray Encounters', defaultMediaType: 'image' },
+        { slotIndex: 1, label: 'Whale Watching', defaultMediaType: 'image' },
+        { slotIndex: 2, label: 'Freediving', defaultMediaType: 'image' },
+        { slotIndex: 3, label: 'Remote Beach Exploration', defaultMediaType: 'image' },
+        { slotIndex: 4, label: 'Kayaking Yardie Creek', defaultMediaType: 'image' },
+        { slotIndex: 5, label: 'Yoga & Breathwork', defaultMediaType: 'image' },
+        { slotIndex: 6, label: 'Sunset Dinners', defaultMediaType: 'image' },
+        { slotIndex: 7, label: 'Expedition RIB Adventures', defaultMediaType: 'image' },
+      ]},
+      { section: 'natureBg', label: 'Nature Box Background', slots: [
+        { slotIndex: 0, label: 'Boat / Nature Background Image', defaultMediaType: 'image' },
+      ]},
+    ],
+  },
+  
   {
     component: 'CtaSection',
     label: 'Home — CTA Background',

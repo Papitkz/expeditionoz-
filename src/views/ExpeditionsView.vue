@@ -273,7 +273,7 @@ onUnmounted(() => {
           </p>
           <button
             class="btn-gold btn-large"
-            @click="router.push('/')"
+            @click="router.push('/book')"
           >
             CHECK AVAILABILITY & BOOK
           </button>
@@ -281,7 +281,6 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <CtaSection />
   </div>
 </template>
 

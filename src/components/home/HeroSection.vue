@@ -15,25 +15,26 @@
     }))
   )
 
-  // Carousel state
+  // Advanced video carousel state
   const currentVideoIndex = ref(0)
   const isTransitioning = ref(false)
   const videoLoaded = ref(false)
-  const isPlaying = ref(false)
-  const showControls = ref(true)
+  const isPlaying = ref(true)
+  const showControls = ref(false)
   const isHovering = ref(false)
   const isMobile = ref(false)
   const touchStartX = ref(0)
   const touchEndX = ref(0)
   const videoError = ref(false)
   const isBuffering = ref(false)
-  const videoRef = ref<<HTMLVideoElement | null>(null)
-  const showCenterPlay = ref(false) // Hidden by default on mobile
-  const showMobilePlay = ref(false) // Controls mobile play button visibility
+  const videoRef = ref<HTMLVideoElement | null>(null)
+  const showCenterPlay = ref(false)
+  const showPlayButton = ref(false) // Unified visibility for play button
 
   let resizeObserver: ResizeObserver | null = null
+  let playAttemptInterval: number | null = null
   let transitionTimeout: number | null = null
-  let mobilePlayTimeout: number | null = null
+  let hoverHideTimeout: number | null = null
 
   onMounted(async () => {
     await cms.load()
@@ -44,29 +45,47 @@
     })
     resizeObserver.observe(document.body)
 
-    // Initialize video but DO NOT autoplay
+    // Initialize video
     if (videoRef.value && videos.value[0]?.hasVideo) {
       videoRef.value.src = videos.value[0].videoUrl
       videoRef.value.load()
+
+      if (isMobile.value) {
+        isPlaying.value = false
+        showCenterPlay.value = false
+        videoRef.value.pause()
+      } else {
+        forcePlay()
+      }
     }
 
+    // Show controls briefly
+    showControls.value = true
+    setTimeout(() => {
+      if (!isHovering.value) showControls.value = false
+    }, 4000)
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Periodic play check — desktop only
+    playAttemptInterval = window.setInterval(() => {
+      if (!isMobile.value && isPlaying.value && videoRef.value?.paused && !videoRef.value?.ended && !isTransitioning.value) {
+        forcePlay()
+      }
+    }, 3000)
   })
 
   onUnmounted(() => {
     if (transitionTimeout) clearTimeout(transitionTimeout)
+    if (hoverHideTimeout) clearTimeout(hoverHideTimeout)
     if (resizeObserver) resizeObserver.disconnect()
-    if (mobilePlayTimeout) clearTimeout(mobilePlayTimeout)
+    if (playAttemptInterval) clearInterval(playAttemptInterval)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
   })
 
   // Mobile detection
   const checkMobile = () => {
     isMobile.value = window.innerWidth < 768
-    // On desktop, always show play button. On mobile, hide until tapped.
-    if (!isMobile.value) {
-      showCenterPlay.value = true
-    }
   }
 
   // Computed video properties
@@ -75,65 +94,31 @@
   const prevVideoIndex = computed(() => currentVideoIndex.value === 0 ? videos.value.length - 1 : currentVideoIndex.value - 1)
   const hasMultipleVideos = computed(() => videos.value.length > 1)
 
-  // Preload next carousel video
+  // Preload video
   const preloadVideo = (url: string) => {
     const video = document.createElement('video')
     video.src = url
-    video.preload = 'metadata'
+    video.preload = 'auto'
     video.muted = true
     video.load()
   }
 
-  // Play video
-  const playVideo = async () => {
+  // Force play with error handling
+  const forcePlay = async () => {
     if (!videoRef.value) return
 
     try {
-      isBuffering.value = true
-      videoRef.value.muted = false
+      videoRef.value.muted = true
       await videoRef.value.play()
       isPlaying.value = true
       videoError.value = false
+      isBuffering.value = false
       showCenterPlay.value = false
-      showMobilePlay.value = false
     } catch (err) {
       console.warn('Playback failed:', err)
       isPlaying.value = false
-      if (!isMobile.value) showCenterPlay.value = true
-    } finally {
-      isBuffering.value = false
+      if (isMobile.value) showCenterPlay.value = true
     }
-  }
-
-  // Pause video
-  const pauseVideo = () => {
-    if (!videoRef.value) return
-    videoRef.value.pause()
-    isPlaying.value = false
-    if (!isMobile.value) showCenterPlay.value = true
-  }
-
-  // Toggle play/pause
-  const togglePlayPause = () => {
-    if (isPlaying.value) {
-      pauseVideo()
-    } else {
-      playVideo()
-    }
-  }
-
-  // Handle hero section tap on mobile
-  const handleHeroTap = () => {
-    if (!isMobile.value) return
-    // Show play button on tap
-    showMobilePlay.value = true
-    // Auto-hide after 3 seconds if not clicked
-    if (mobilePlayTimeout) clearTimeout(mobilePlayTimeout)
-    mobilePlayTimeout = window.setTimeout(() => {
-      if (!isPlaying.value) {
-        showMobilePlay.value = false
-      }
-    }, 3000)
   }
 
   // Smooth video transition
@@ -143,26 +128,33 @@
     isTransitioning.value = true
     isBuffering.value = true
 
-    videoRef.value.pause()
-
+    // Fade out current
     videoRef.value.style.opacity = '0.3'
 
     transitionTimeout = window.setTimeout(() => {
+      // Update index
       currentVideoIndex.value = newIndex
+
+      // Set new source
       videoRef.value!.src = videos.value[newIndex].videoUrl
       videoRef.value!.load()
 
       const onCanPlay = () => {
         videoRef.value!.removeEventListener('canplaythrough', onCanPlay)
         videoRef.value!.style.opacity = '1'
-        isTransitioning.value = false
-        isBuffering.value = false
 
-        // Reset to paused state
-        isPlaying.value = false
-        if (!isMobile.value) showCenterPlay.value = true
-        showMobilePlay.value = false
+        if (isMobile.value && !isPlaying.value) {
+          videoRef.value!.pause()
+          showCenterPlay.value = false
+          isTransitioning.value = false
+          isBuffering.value = false
+        } else {
+          forcePlay()
+          isTransitioning.value = false
+          isBuffering.value = false
+        }
 
+        // Preload next video
         if (videos.value[nextVideoIndex.value]?.hasVideo) {
           preloadVideo(videos.value[nextVideoIndex.value].videoUrl)
         }
@@ -182,9 +174,29 @@
   const prevVideo = () => switchVideo(prevVideoIndex.value)
   const goToVideo = (index: number) => switchVideo(index)
 
+  const togglePlayPause = () => {
+    isPlaying.value = !isPlaying.value
+    if (isPlaying.value) {
+      forcePlay()
+    } else {
+      videoRef.value?.pause()
+      if (isMobile.value) {
+        showCenterPlay.value = true
+      }
+    }
+  }
+
+  const handleCenterPlayClick = () => {
+    togglePlayPause()
+  }
+
   const handleVideoEnded = () => {
-    isPlaying.value = false
-    if (!isMobile.value) showCenterPlay.value = true
+    if (hasMultipleVideos.value) {
+      nextVideo()
+    } else if (videoRef.value) {
+      videoRef.value.currentTime = 0
+      forcePlay()
+    }
   }
 
   // Touch handlers for mobile swipe
@@ -210,14 +222,33 @@
     }
   }
 
-  // Hover handlers
+  // ─── DESKTOP: show play button only on hover ───────────────────────────────
   const onMouseEnter = () => {
     isHovering.value = true
     showControls.value = true
+    if (hoverHideTimeout) clearTimeout(hoverHideTimeout)
+
+    if (!isMobile.value) {
+      showPlayButton.value = true
+    }
   }
 
   const onMouseLeave = () => {
     isHovering.value = false
+    setTimeout(() => {
+      if (!isHovering.value) showControls.value = false
+    }, 2000)
+
+    if (!isMobile.value) {
+      showPlayButton.value = false
+    }
+  }
+
+  // ─── MOBILE: tap anywhere on hero to toggle play/pause button ──────────────
+  const onHeroClick = () => {
+    if (isMobile.value) {
+      showPlayButton.value = !showPlayButton.value
+    }
   }
 
   const onVideoLoaded = () => {
@@ -225,6 +256,10 @@
     if (videoRef.value) {
       videoRef.value.style.opacity = '1'
     }
+  }
+
+  const onVideoPause = () => {
+    if (isMobile.value) showCenterPlay.value = true
   }
 
   const onVideoError = () => {
@@ -235,20 +270,20 @@
   }
 
   const handleVisibilityChange = () => {
-    if (document.hidden && isPlaying.value) {
-      pauseVideo()
+    if (!document.hidden && isPlaying.value && !isMobile.value) {
+      forcePlay()
     }
   }
 </script>
 
-<<template>
+<template>
   <section 
     class="relative h-screen w-full overflow-hidden hero-section"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
     @touchstart="onTouchStart"
     @touchend="onTouchEnd"
-    @click="handleHeroTap"
+    @click="onHeroClick"
   >
     <!-- Video Background with Carousel -->
     <div class="absolute inset-0 z-0">
@@ -256,10 +291,10 @@
         <video
           v-if="videos[0]?.hasVideo"
           ref="videoRef"
-          :muted="!isPlaying"
-          :loop="false"
+          muted
+          loop
           playsinline
-          preload="metadata"
+          preload="auto"
           class="w-full h-full object-cover video-hero"
           :class="{ 
             'video-fade-in': videoLoaded,
@@ -269,8 +304,8 @@
           @ended="handleVideoEnded"
           @error="onVideoError"
           @waiting="isBuffering = true"
-          @playing="isBuffering = false"
-          @pause="isPlaying = false; showCenterPlay = true"
+          @playing="isBuffering = false; showCenterPlay = false"
+          @pause="onVideoPause"
         >
           <source :src="currentVideoUrl" type="video/mp4">
         </video>
@@ -291,30 +326,12 @@
       <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
     </div>
 
-    <!-- DESKTOP CENTER PLAY BUTTON (always visible) -->
+    <!-- CENTER PLAY/PAUSE BUTTON -->
     <button
-      v-if="videos[0]?.hasVideo && !isBuffering && !isMobile"
-      @click.stop="togglePlayPause"
-      class="center-play-button desktop-play"
-      :aria-label="isPlaying ? 'Pause video' : 'Play video'"
-    >
-      <div class="play-circle">
-        <svg v-if="!isPlaying" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="play-icon">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-        <svg v-else width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="pause-icon">
-          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-        </svg>
-      </div>
-      <span v-if="!isPlaying" class="play-label">Play Video</span>
-    </button>
-
-    <!-- MOBILE CENTER PLAY BUTTON (hidden until tapped) -->
-    <button
-      v-if="videos[0]?.hasVideo && !isBuffering && isMobile && showMobilePlay"
-      @click.stop="togglePlayPause"
-      class="center-play-button mobile-play"
-      :class="{ 'is-visible': showMobilePlay }"
+      v-if="videos[0]?.hasVideo && !isBuffering"
+      @click.stop="handleCenterPlayClick"
+      class="center-play-button"
+      :class="{ 'is-visible': showPlayButton }"
       :aria-label="isPlaying ? 'Pause video' : 'Play video'"
     >
       <div class="play-circle">
@@ -325,42 +342,22 @@
           <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
         </svg>
       </div>
-      <span v-if="!isPlaying" class="play-label">Tap to Play</span>
     </button>
 
-    <!-- Carousel Navigation Arrows (when multiple videos) -->
-    <template v-if="hasMultipleVideos && videos[0]?.hasVideo">
-      <button
-        @click.stop="prevVideo"
-        class="carousel-nav carousel-prev"
-        aria-label="Previous video"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-      <button
-        @click.stop="nextVideo"
-        class="carousel-nav carousel-next"
-        aria-label="Next video"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </button>
-
-      <!-- Video Dots -->
-      <div class="video-dots">
-        <button
-          v-for="(_, index) in videos"
-          :key="index"
-          class="video-dot"
-          :class="{ active: currentVideoIndex === index }"
-          @click.stop="goToVideo(index)"
-          :aria-label="`Go to video ${index + 1}`"
-        />
-      </div>
-    </template>
+    <!-- Play/Pause Toggle (Single video fallback - Bottom Right) -->
+    <button
+      v-else-if="videos[0]?.hasVideo"
+      @click.stop="togglePlayPause"
+      class="absolute bottom-4 md:bottom-8 right-4 md:right-8 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 group overflow-hidden aspect-square"
+      :aria-label="isPlaying ? 'Pause video' : 'Play video'"
+    >
+      <svg v-if="isPlaying" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 block">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </svg>
+      <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 block ml-0.5">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+    </button>
 
     <!-- Center Content (Headline, Subtext & Buttons) -->
     <div class="relative z-20 h-full flex flex-col justify-end items-start px-6 sm:px-8 pb-24 md:pb-16">
@@ -424,7 +421,7 @@
   100% { transform: scale(1.08); }
 }
 
-/* CENTER PLAY BUTTON - SHARED */
+/* CENTER PLAY BUTTON */
 .center-play-button {
   position: absolute;
   top: 50%;
@@ -435,39 +432,23 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  transition: opacity 0.4s ease, transform 0.3s ease;
-}
-
-/* DESKTOP PLAY BUTTON */
-.desktop-play {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* MOBILE PLAY BUTTON */
-.mobile-play {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.9);
+  transition: opacity 0.4s ease;
 }
 
-.mobile-play.is-visible {
+.center-play-button.is-visible {
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, -50%) scale(1);
 }
 
 .play-circle {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  width: 72px;
+  height: 72px;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -476,9 +457,9 @@
 }
 
 .center-play-button:hover .play-circle {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.95);
-  transform: scale(1.1);
+  transform: scale(1.08);
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -489,77 +470,6 @@
 
 .pause-icon {
   color: white;
-}
-
-.play-label {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  font-weight: 500;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-/* CAROUSEL NAVIGATION ARROWS */
-.carousel-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 20;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(4, 26, 43, 0.5);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(198, 168, 76, 0.4);
-  color: #C9A84C;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.carousel-nav:hover {
-  background: rgba(198, 168, 76, 0.15);
-  border-color: #C9A84C;
-  transform: translateY(-50%) scale(1.08);
-}
-
-.carousel-prev {
-  left: 16px;
-}
-
-.carousel-next {
-  right: 16px;
-}
-
-/* VIDEO DOTS */
-.video-dots {
-  position: absolute;
-  bottom: 140px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  display: flex;
-  gap: 10px;
-}
-
-.video-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid rgba(198, 168, 76, 0.5);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0;
-}
-
-.video-dot.active {
-  background: #C9A84C;
-  border-color: #C9A84C;
-  transform: scale(1.2);
 }
 
 .buffering-indicator {
@@ -623,35 +533,27 @@
   box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
 }
 
+/* Mobile: disable zoom animation to keep video steady */
+@media (max-width: 767px) {
+  .video-fade-in {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 @media (max-width: 767px) {
   .play-circle {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
   }
   .play-icon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     margin-left: 2px;
   }
   .pause-icon {
     width: 20px;
     height: 20px;
-  }
-  .play-label {
-    font-size: 0.7rem;
-  }
-  .carousel-nav {
-    width: 36px;
-    height: 36px;
-  }
-  .carousel-prev {
-    left: 8px;
-  }
-  .carousel-next {
-    right: 8px;
-  }
-  .video-dots {
-    bottom: 120px;
   }
 }
 </style>

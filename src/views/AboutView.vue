@@ -1,4 +1,5 @@
 <script setup lang="ts">
+
 import { ref, computed, onMounted } from 'vue'
 import { useSEO } from '@/composables/useSEO'
 import { useScrollReveal } from '@/composables/useScrollReveal'
@@ -190,7 +191,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- <CtaSection /> -->
+    <CtaSection />
   </div>
 </template>
 
