@@ -30,6 +30,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'settings', name: 'admin-settings', component: () => import('@/views/admin/AdminSettings.vue') },
       { path: 'users', name: 'admin-users', component: () => import('@/views/admin/AdminUsers.vue') },
       { path: 'bookings', name: 'admin-bookings', component: () => import('@/views/admin/AdminBookings.vue') },
+      { path: 'call-schedule', name: 'admin-call-schedule', component: () => import('@/views/admin/AdminCallSchedule.vue') },
     ],
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },

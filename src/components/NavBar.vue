@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminAuth } from '@/composables/useAdminAuth'
 import { useTheme } from '@/composables/useTheme'
+import BookACallButton from '@/components/BookACallButton.vue'
 
 const router = useRouter()
 const { user, isAdmin } = useAdminAuth()
@@ -183,7 +184,7 @@ onUnmounted(() => {
         <!-- Right: Buttons -->
         <div class="flex items-center gap-2 sm:gap-3 z-10 relative">
           <!-- Desktop: show both buttons -->
-          <router-link to="/expeditions" class="top-right-btn hidden lg:inline-flex" style="background-color:  #dbb86a;color: black;">
+          <router-link to="/expeditions" class="top-right-btn hidden lg:inline-flex" style="background-color: #dbb86a; color: black;">
             Choose Your Adventure
           </router-link>
           <router-link to="/book" class="top-right-btn hidden lg:inline-flex">
@@ -327,41 +328,13 @@ onUnmounted(() => {
         <button class="btn-primary-mobile" @click="navigate('/book')">
           Book Now
         </button>
-
-        <!-- <router-link
-          v-if="user && isAdmin"
-          to="/admin/dashboard"
-          class="admin-link"
-          @click="navigate('/admin/dashboard')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          Admin Dashboard
-        </router-link>
-
-        <router-link
-          v-else
-          to="/admin"
-          class="admin-link"
-          @click="navigate('/admin')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" y1="12" x2="3" y2="12" />
-          </svg>
-          Login
-        </router-link> -->
       </div>
 
     </div>
   </aside>
 
   <!-- Bottom Controls Bar -->
-  <div class="bottom-controls">
-
+  <div class="bottom-controls mt-10">
     <div class="timezone-wrapper">
       <div class="clock-display" @click="showTimezoneDropdown = !showTimezoneDropdown">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -389,11 +362,7 @@ onUnmounted(() => {
       </transition>
     </div>
 
-    <!-- <div class="divider"></div> -->
-
-    <!-- <div class="copyright-notice">
-      ©2026 Expedition OZ, AUS
-    </div> -->
+    <BookACallButton  />
   </div>
 </template>
 
@@ -509,18 +478,6 @@ onUnmounted(() => {
   border-color: rgba(248, 245, 239, 0.6);
   color: white;
   background: rgba(255, 255, 255, 0.08);
-}
-
-.top-right-btn.btn-primary {
-  background: var(--color-gold-400);
-  color: rgba(7, 26, 43, 0.95);
-  border-color: var(--color-gold-400);
-}
-
-.top-right-btn.btn-primary:hover {
-  background: #dbb86a;
-  border-color: #dbb86a;
-  color: rgba(7, 26, 43, 1);
 }
 
 /* ════════════════════════════════════════
@@ -1005,110 +962,27 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
 }
 
-.admin-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-family: var(--font-heading);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-gold-400);
-  text-decoration: none;
-  padding: 12px 24px;
-  border: 1px solid rgba(201, 168, 76, 0.4);
-  border-radius: 8px;
-  background: transparent;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.admin-link:hover {
-  background: rgba(201, 168, 76, 0.12);
-  border-color: var(--color-gold-400);
-  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.15);
-  transform: translateY(-2px);
-  color: #fff;
-}
-
-.admin-link svg {
-  width: 18px;
-  height: 18px;
-  stroke: var(--color-gold-400);
-  transition: stroke 0.3s ease, transform 0.4s ease;
-}
-
-.admin-link:hover svg {
-  stroke: #fff;
-  transform: scale(1.1);
-}
-
-.admin-link::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transform: skewX(-20deg);
-  transition: left 0.5s ease;
-}
-
-.admin-link:hover::after {
-  left: 150%;
-  transition: left 0.7s ease;
-}
-
 /* ════════════════════════════════════════
    BOTTOM CONTROLS BAR
    ════════════════════════════════════════ */
 .bottom-controls {
   position: fixed;
   bottom: 16px;
+  left: 16px;
   right: 16px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   z-index: 50;
   font-family: var(--font-heading);
   font-size: 0.65rem;
   letter-spacing: 0.1em;
+  pointer-events: none;
 }
 
-.divider {
-  width: 1px;
-  height: 16px;
-  background: rgba(248, 245, 239, 0.2);
-}
-
-.control-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: rgba(7, 26, 43, 0.8);
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  border-radius: 20px;
-  color: rgba(248, 245, 239, 0.6);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(4px);
-}
-
-.control-btn.active {
-  background: rgba(201, 168, 76, 0.15);
-  border-color: var(--color-gold-400);
-  color: var(--color-gold-400);
-}
-
-.control-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  font-weight: 500;
+.bottom-controls > * {
+  pointer-events: auto;
 }
 
 .timezone-wrapper {
@@ -1150,7 +1024,7 @@ onUnmounted(() => {
 .timezone-dropdown {
   position: absolute;
   bottom: calc(100% + 8px);
-  right: 0;
+  left: 0;
   min-width: 180px;
   max-height: 240px;
   overflow-y: auto;
@@ -1178,12 +1052,6 @@ onUnmounted(() => {
   color: var(--color-gold-400);
 }
 
-.copyright-notice {
-  color: rgba(248, 245, 239, 0.5);
-  font-size: 0.6rem;
-  padding: 6px 0;
-}
-
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all 0.2s ease;
@@ -1208,31 +1076,13 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .bottom-controls {
     bottom: 12px;
-    right: 12px;
     left: 12px;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .control-label {
-    display: none;
+    right: 12px;
   }
 
   .time-text {
     font-size: 0.65rem;
     min-width: 75px;
-  }
-
-  .copyright-notice {
-    order: -1;
-    width: 100%;
-    text-align: center;
-    padding: 4px 0;
-  }
-
-  .divider {
-    display: none;
   }
 
   .top-right-btn {
@@ -1258,14 +1108,9 @@ onUnmounted(() => {
 
 @media (max-width: 480px) {
   .bottom-controls {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-  }
-
-  .copyright-notice {
-    order: 0;
-    width: auto;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
   }
 
   .top-right-btn {

@@ -17,7 +17,6 @@ const isLoading = ref(false)
 const showContent = ref(true)
 const initialLoadDone = ref(false)
 const showScrollTop = ref(false)
-// For accessibility: announce route changes to screen readers
 const routeAnnounce = ref('')
 
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
@@ -57,7 +56,6 @@ const rippleSettings = {
   strokeColor: [201, 168, 76] as [number, number, number],
 }
 
-// Compute ratio once — window.devicePixelRatio is stable
 const pixelRatio = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1
 
 class Ripple {
@@ -118,7 +116,6 @@ const handleInitialLoad = async () => {
   }, 2000)
 }
 
-// No mousemove on touch screens — skip canvas entirely
 const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
 onMounted(() => {
@@ -163,10 +160,9 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
-router.afterEach(async (to) => {
+router.afterEach(async () => {
   await nextTick()
 
-  // Announce route change for screen readers
   routeAnnounce.value = `Navigated to ${document.title}`
   setTimeout(() => { routeAnnounce.value = '' }, 1000)
 
@@ -230,13 +226,9 @@ const animateRipples = () => {
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
     <!-- Screen reader route announcer -->
-    <div
-      aria-live="polite"
-      aria-atomic="true"
-      class="sr-only"
-    >{{ routeAnnounce }}</div>
+    <div aria-live="polite" aria-atomic="true" class="sr-only">{{ routeAnnounce }}</div>
 
-    <!-- Ripple Canvas — desktop with mouse only, not admin, not touch -->
+    <!-- Ripple Canvas -->
     <canvas
       v-if="cursorEffectsEnabled && !isAdminRoute && !isTouchDevice"
       ref="canvasRef"
@@ -251,7 +243,7 @@ const animateRipples = () => {
       </div>
     </Transition>
 
-    <!-- Admin routes get a clean layout without nav/footer -->
+    <!-- Admin routes -->
     <div v-if="isAdminRoute" class="admin-wrapper">
       <router-view />
     </div>
@@ -276,9 +268,10 @@ const animateRipples = () => {
       </main>
       <FooterSection class="fixed-footer" />
 
+      <!-- Scroll to Top only -->
       <Transition name="fade-slide">
         <button
-          v-show="showScrollTop"
+          v-show="showScrollTop && !isAdminRoute"
           @click="scrollToTop"
           class="scroll-top-btn"
           aria-label="Scroll to top of page"
@@ -344,14 +337,14 @@ const animateRipples = () => {
   z-index: 1;
 }
 
+/* Scroll to top — sits bottom-right, above the clock bar */
 .scroll-top-btn {
   position: fixed;
-  bottom: 3rem;
+  bottom: 4rem;
   right: 2rem;
-  z-index: 100;
+  z-index: 200;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   padding: 0.75rem 1rem;
   background: rgba(7, 26, 43, 0.9);
   backdrop-filter: blur(10px);
@@ -376,6 +369,21 @@ const animateRipples = () => {
   outline-offset: 3px;
 }
 
+@media (max-width: 768px) {
+  .scroll-top-btn {
+    bottom: 4.5rem;
+    right: 1.5rem;
+    padding: 0.625rem 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .scroll-top-btn {
+    bottom: 5rem;
+    right: 1rem;
+  }
+}
+
 .loader-fade-leave-active {
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
@@ -392,25 +400,6 @@ const animateRipples = () => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(20px);
-}
-
-@media (max-width: 768px) {
-  .scroll-top-btn {
-    bottom: 1.5rem;
-    left: 1.5rem;
-    right: auto;
-    padding: 0.625rem 0.875rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scroll-top-btn,
-  .loader-fade-leave-active,
-  .fade-slide-enter-active,
-  .fade-slide-leave-active {
-    transition: none;
-    animation: none;
-  }
 }
 
 /* --- Preview Mode Banner --- */
@@ -491,5 +480,15 @@ const animateRipples = () => {
 
 :global([data-theme='light']) .main-content {
   background: var(--color-sand-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-top-btn,
+  .loader-fade-leave-active,
+  .fade-slide-enter-active,
+  .fade-slide-leave-active {
+    transition: none;
+    animation: none;
+  }
 }
 </style>
