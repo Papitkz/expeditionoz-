@@ -17,10 +17,10 @@ export default defineConfig({
     noExternal: ['vuetify'],
   },
   build: {
-    target: 'es2015',
+    target: 'es2020',
     cssCodeSplit: true,
     reportCompressedSize: false,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         manualChunks(id: string) {
@@ -39,11 +39,12 @@ export default defineConfig({
           if (id.includes('node_modules/gsap')) {
             return 'vendor-gsap'
           }
-          if (id.includes('node_modules/three')) {
-            return 'vendor-three'
-          }
           if (id.includes('node_modules/lenis')) {
             return 'vendor-lenis'
+          }
+          // Admin panel gets its own chunk — never loaded by public visitors
+          if (id.includes('src/views/admin/')) {
+            return 'admin'
           }
         },
       },
